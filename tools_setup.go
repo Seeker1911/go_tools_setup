@@ -3,17 +3,19 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 )
 
 func setupDirs(oldDotfileDir string, dotfileDir string, cwd string) {
 	fmt.Println("Creating dotfiles_old directory")
 	os.MkdirAll(oldDotfileDir, 0777)
 	if cwd != dotfileDir {
-		fmt.Printf("changing directory to %s\n", dotfileDir)
+		fmt.Printf("Changing directory to %s\n", dotfileDir)
 		os.Chdir(dotfileDir)
 
 	}
@@ -23,7 +25,6 @@ func symlinkFiles(files []string, dotfileDir string, home string) {
 	fmt.Printf("Symlinking dotfiles to %s\n", home)
 	for _, element := range files {
 		os.Symlink(dotfileDir+"/"+element, home+"/"+element)
-		//fmt.Printf("TEST: Would symlink %s to %s\n",dotfileDir+"/"+element, home+"/"+element )
 	}
 }
 
@@ -31,7 +32,6 @@ func moveFiles(files []string, oldDotfileDir string, home string) {
 	fmt.Printf("Moving existing dotfiles to %s\n", oldDotfileDir)
 	for _, element := range files {
 		os.Rename(home+"/"+element, home+"/"+oldDotfileDir+"/"+element)
-		//fmt.Printf("TEST: would move %s to %s\n",home+"/"+element, home+oldDotfileDir+"/"+element )
 	}
 }
 
@@ -59,9 +59,8 @@ func runPkgMgr(dotfileDir string) {
 	cmd.Stderr = &stderr
 	err := cmd.Run()
 	if err != nil {
-		fmt.Println("stderr...")
+		fmt.Printf("Result from %s\n", pkgmgr)
 		fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
-		fmt.Println("stdout...")
 		fmt.Println(fmt.Sprint(err) + ": " + out.String())
 		return
 	}
@@ -71,16 +70,27 @@ func runPkgMgr(dotfileDir string) {
 
 func main() {
 	home := os.Getenv("HOME")
-	dotfileDir := home+"/dotfiles"
-	oldDotfileDir := home+"/dotfiles_old"
+	dotfileDir := home + "/dotfiles"
+	oldDotfileDir := home + "/dotfiles_old"
+	var files []string
+
+	testFiles, err := ioutil.ReadDir(dotfileDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Grabbing dotfiles from repo")
+	for _, f := range testFiles {
+		if strings.HasPrefix(f.Name(), ".") {
+			files = append(files, f.Name())
+		}
+	}
+
 	cwd, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	fmt.Printf("Current working directory is: %s\n", cwd)
-	files := []string{".bashrc", ".tmux.conf", ".vimrc", ".vim", ".ctags", ".gitignore_global", ".Xresources"}
-
-
 	//set up directories
 	setupDirs(oldDotfileDir, dotfileDir, cwd)
 	//move existing files to dotfiles_old
@@ -89,6 +99,5 @@ func main() {
 	symlinkFiles(files, dotfileDir, home)
 	//run package manager (i.e. brew or apt)
 	runPkgMgr(dotfileDir)
-	//restart bash
-	
+
 }
