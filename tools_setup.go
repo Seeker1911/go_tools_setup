@@ -37,31 +37,53 @@ func moveFiles(files []string, oldDotfileDir string, home string) {
 
 func runPkgMgr(dotfileDir string) {
 	platform := runtime.GOOS
-	pkgmgr := ""
+	fmt.Printf("Runtime is %s\n", platform)
+	shCommand := ""
 	var args []string
 	switch {
 	case platform == "darwin":
-		fmt.Println("platform is macos")
-		pkgmgr = "/usr/local/bin/brew"
-		args = append(args, "bundle", "check")
+		shCommand = "/usr/local/bin/brew"
+		args = append(args, "bundle")
+
+		if _, err := os.Stat(shCommand); os.IsNotExist(err) {
+			shCommand = "/usr/bin/ruby"
+			args = append(args, "-e", "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)")
+			fmt.Println("Installing homebrew")
+			runCommands(shCommand, args)
+			shCommand = "/usr/local/bin/brew"
+			args = append(args, "bundle")
+		}
 	case platform == "linux":
-		fmt.Println("platform is linux")
-		pkgmgr = "apt"
+		shCommand = "/home/linuxbrew/.linuxbrew/bin/brew"
+		args = append(args, "bundle")
+
+		if _, err := os.Stat(shCommand); os.IsNotExist(err) {
+			shCommand = "sh"
+			args = append(args, "-c", "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)")
+			fmt.Println("Installing linuxbrew")
+			runCommands(shCommand, args)
+			shCommand = "/home/linuxbrew/.linuxbrew/bin/brew"
+			args = append(args, "bundle")
+		}
 	default:
-		fmt.Println("Cant find platform")
+		fmt.Println("Cant find platform for package manager")
 	}
-	//run package manager
+
 	os.Chdir(dotfileDir)
-	cmd := exec.Command(pkgmgr, args...)
+	fmt.Println("Installing Brewfile, this may take a while...")
+	runCommands(shCommand, args)
+}
+
+func runCommands(shCommand string, args []string) {
+	cmd := exec.Command(shCommand, args...)
 	var out bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &out
 	cmd.Stderr = &stderr
 	err := cmd.Run()
 	if err != nil {
-		fmt.Printf("Result from %s\n", pkgmgr)
-		fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
 		fmt.Println(fmt.Sprint(err) + ": " + out.String())
+		fmt.Println("Setup complete.")
 		return
 	}
 	fmt.Println("Result: " + out.String())
