@@ -121,5 +121,8 @@ func main() {
 	symlinkFiles(files, dotfileDir, home)
 	//run package manager (i.e. brew or apt)
 	runPkgMgr(dotfileDir)
-
+	fmt.Println("You may want to run a few tools:")
+	fmt.Println("tmux package manager")
+	fmt.Println("vim plugged")
+	fmt.Println("check pyenv versions")
 }
