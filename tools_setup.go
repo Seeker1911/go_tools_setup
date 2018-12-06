@@ -11,6 +11,7 @@ import (
 	"strings"
 )
 
+// setupDirs creates a new directory and changes the current working directory to that directory.
 func setupDirs(oldDotfileDir string, dotfileDir string, cwd string) {
 	fmt.Println("Creating dotfiles_old directory")
 	os.MkdirAll(oldDotfileDir, 0777)
@@ -21,6 +22,7 @@ func setupDirs(oldDotfileDir string, dotfileDir string, cwd string) {
 	}
 }
 
+// symlinkFiles creates symlink of files from dotfileDir to home directory.
 func symlinkFiles(files []string, dotfileDir string, home string) {
 	fmt.Printf("Symlinking dotfiles to %s\n", home)
 	for _, element := range files {
@@ -28,6 +30,7 @@ func symlinkFiles(files []string, dotfileDir string, home string) {
 	}
 }
 
+// moveFiles existing dotfiles to dotfilesOld
 func moveFiles(files []string, oldDotfileDir string, home string) {
 	fmt.Printf("Moving existing dotfiles to %s\n", oldDotfileDir)
 	for _, element := range files {
@@ -35,10 +38,12 @@ func moveFiles(files []string, oldDotfileDir string, home string) {
 	}
 }
 
+// runPkgMgr installs a Brewfile given a directory it exists in.
+// Brew is installed if not found. Working environment, MacOS or LInux, is automatically detected.
 func runPkgMgr(dotfileDir string) {
 	platform := runtime.GOOS
 	fmt.Printf("Runtime is %s\n", platform)
-	shCommand := ""
+	var shCommand string
 	var args []string
 	switch {
 	case platform == "darwin":
@@ -74,6 +79,7 @@ func runPkgMgr(dotfileDir string) {
 	runCommands(shCommand, args)
 }
 
+// runCommands runs a single command given the command and its arguments.
 func runCommands(shCommand string, args []string) {
 	cmd := exec.Command(shCommand, args...)
 	var out bytes.Buffer
@@ -92,8 +98,8 @@ func runCommands(shCommand string, args []string) {
 
 func main() {
 	home := os.Getenv("HOME")
-	dotfileDir := home + "/dotfiles"
-	oldDotfileDir := home + "/dotfiles_old"
+	dotfileDir := fmt.Sprintf("%s/dotfiles", home)
+	oldDotfileDir := fmt.Sprintf("%v/dotfiles_old", home)
 	var files []string
 
 	testFiles, err := ioutil.ReadDir(dotfileDir)
