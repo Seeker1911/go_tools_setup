@@ -98,8 +98,8 @@ func runCommands(shCommand string, args []string) {
 
 func main() {
 	home := os.Getenv("HOME")
-	dotfileDir := fmt.Sprintf("%s/dotfiles", home)
-	oldDotfileDir := fmt.Sprintf("%v/dotfiles_old", home)
+	dotfileDir := home + "/dotfiles"
+	oldDotfileDir := home + "/dotfiles_old"
 	var files []string
 
 	testFiles, err := ioutil.ReadDir(dotfileDir)
